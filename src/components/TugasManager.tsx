@@ -13,7 +13,7 @@ import { useTugas } from "../hooks/useTugas";
 import Modal from "./Modal";
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api/courses";
+const API_URL = "https://naylanisya.rf.gd/api.php";
 
 const TugasManager: React.FC = () => {
   const {
@@ -116,22 +116,22 @@ const TugasManager: React.FC = () => {
     setIsSubmitting(false);
   };
 
- const handleDeleteClick = (id: string, name: string) => {
-   setDeleteTargetId(id);
-   setDeleteTargetName(name);
-   setModalOpen(true);
- };
+  const handleDeleteClick = (id: string, name: string) => {
+    setDeleteTargetId(id);
+    setDeleteTargetName(name);
+    setModalOpen(true);
+  };
 
- const handleConfirmDelete = async () => {
-   if (deleteTargetId) {
-     setIsSubmitting(true);
-     await deleteTugas(deleteTargetId);
-     setIsSubmitting(false);
-     setDeleteTargetId(null);
-     setDeleteTargetName("");
-     setModalOpen(false); // ← TAMBAHKAN INI
-   }
- };
+  const handleConfirmDelete = async () => {
+    if (deleteTargetId) {
+      setIsSubmitting(true);
+      await deleteTugas(deleteTargetId);
+      setIsSubmitting(false);
+      setDeleteTargetId(null);
+      setDeleteTargetName("");
+      setModalOpen(false); // ← TAMBAHKAN INI
+    }
+  };
 
   const handleCancel = () => {
     setIsAdding(false);

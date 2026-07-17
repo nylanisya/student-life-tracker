@@ -8,7 +8,8 @@ export interface IpkRecord {
   createdAt: string;
 }
 
-const API_URL = "http://localhost:5000/api/ipk";
+const API_URL = "https://naylanisya.rf.gd/api.php";
+const TABLE = "ipk_history";
 
 export function useIpk() {
   const [ipkHistory, setIpkHistory] = useState<IpkRecord[]>([]);
@@ -18,16 +19,14 @@ export function useIpk() {
   const fetchIpk = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(API_URL);
-      if (response.data.success && Array.isArray(response.data.data)) {
-        const parsedData = response.data.data.map((item: any) => ({
-          id: item.id.toString(),
-          semester: item.semester,
-          value: parseFloat(item.ipk),
-          createdAt: item.created_at,
-        }));
-        setIpkHistory(parsedData);
-      }
+      const response = await axios.get(`${API_URL}?table=${TABLE}`);
+      const parsedData = (response.data || []).map((item: any) => ({
+        id: item.id.toString(),
+        semester: item.semester,
+        value: parseFloat(item.ipk),
+        createdAt: item.created_at,
+      }));
+      setIpkHistory(parsedData);
       setError(null);
     } catch (err) {
       console.error("Error fetching IPK:", err);
@@ -41,9 +40,6 @@ export function useIpk() {
     fetchIpk();
   }, []);
 
-  // ===== KALKULASI =====
-
-  // 1. IPS terbaru (nilai semester terakhir)
   const currentIpk =
     ipkHistory.length > 0
       ? ipkHistory.reduce((latest, current) =>
@@ -51,39 +47,33 @@ export function useIpk() {
         )
       : null;
 
-  // 2. IPS sebelumnya (semester kedua terakhir)
   const previousIpk =
     ipkHistory.length > 1
       ? ipkHistory
           .filter((item) => item.semester < (currentIpk?.semester || 0))
-          .reduce((latest, current) =>
-            current.semester > latest.semester ? current : latest
+          .reduce(
+            (latest, current) =>
+              current.semester > latest.semester ? current : latest,
+            ipkHistory[0]
           )
       : null;
 
-  // 3. Delta (selisih IPS terakhir dengan sebelumnya)
   const delta =
     currentIpk && previousIpk ? currentIpk.value - previousIpk.value : 0;
 
-  // 4. IPK (rata-rata dari semua IPS)
   const averageIpk =
     ipkHistory.length > 0
       ? ipkHistory.reduce((sum, item) => sum + item.value, 0) /
         ipkHistory.length
       : 0;
 
-  // 5. Jumlah semester
   const totalSemester = ipkHistory.length;
 
-  // ===== CRUD =====
   const addIpk = async (semester: number, value: number) => {
     try {
-      const response = await axios.post(API_URL, { semester, ipk: value });
-      if (response.data.success) {
-        await fetchIpk();
-        return true;
-      }
-      return false;
+      await axios.post(`${API_URL}?table=${TABLE}`, { semester, ipk: value });
+      await fetchIpk();
+      return true;
     } catch (err) {
       console.error("Error adding IPK:", err);
       return false;
@@ -92,15 +82,12 @@ export function useIpk() {
 
   const updateIpk = async (id: string, semester: number, value: number) => {
     try {
-      const response = await axios.put(`${API_URL}/${id}`, {
+      await axios.put(`${API_URL}?table=${TABLE}&id=${id}`, {
         semester,
         ipk: value,
       });
-      if (response.data.success) {
-        await fetchIpk();
-        return true;
-      }
-      return false;
+      await fetchIpk();
+      return true;
     } catch (err) {
       console.error("Error updating IPK:", err);
       return false;
@@ -109,12 +96,9 @@ export function useIpk() {
 
   const deleteIpk = async (id: string) => {
     try {
-      const response = await axios.delete(`${API_URL}/${id}`);
-      if (response.data.success) {
-        await fetchIpk();
-        return true;
-      }
-      return false;
+      await axios.delete(`${API_URL}?table=${TABLE}&id=${id}`);
+      await fetchIpk();
+      return true;
     } catch (err) {
       console.error("Error deleting IPK:", err);
       return false;

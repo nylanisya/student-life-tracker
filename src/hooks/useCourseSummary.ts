@@ -12,7 +12,8 @@ export interface Course {
   lastRead: string;
 }
 
-const API_URL = "http://localhost:5000/api/courses";
+const API_URL = "https://naylanisya.rf.gd/api.php";
+const TABLE = "courses";
 
 export function useCourseSummary() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -22,10 +23,18 @@ export function useCourseSummary() {
   const fetchCourses = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(API_URL);
-      if (response.data.success && Array.isArray(response.data.data)) {
-        setCourses(response.data.data);
-      }
+      const response = await axios.get(`${API_URL}?table=${TABLE}`);
+      const parsed = (response.data || []).map((item: any) => ({
+        id: item.id.toString(),
+        name: item.name,
+        code: item.code,
+        semester: item.semester,
+        progress: item.progress,
+        modules: item.modules,
+        completedModules: item.completed_modules,
+        lastRead: item.last_read,
+      }));
+      setCourses(parsed);
       setError(null);
     } catch (err) {
       console.error("Error fetching courses:", err);
@@ -39,20 +48,21 @@ export function useCourseSummary() {
     fetchCourses();
   }, []);
 
-  // ===== GETTER: Daftar nama mata kuliah untuk dropdown =====
-  const getCourseNames = () => {
-    return courses.map((c) => c.name);
-  };
+  const getCourseNames = () => courses.map((c) => c.name);
 
-  // ===== CRUD =====
   const addCourse = async (course: Omit<Course, "id">) => {
     try {
-      const response = await axios.post(API_URL, course);
-      if (response.data.success) {
-        await fetchCourses();
-        return true;
-      }
-      return false;
+      await axios.post(`${API_URL}?table=${TABLE}`, {
+        name: course.name,
+        code: course.code,
+        semester: course.semester,
+        progress: course.progress,
+        modules: course.modules,
+        completed_modules: course.completedModules,
+        last_read: course.lastRead,
+      });
+      await fetchCourses();
+      return true;
     } catch (err) {
       console.error("Error adding course:", err);
       return false;
@@ -61,12 +71,19 @@ export function useCourseSummary() {
 
   const updateCourse = async (id: string, course: Partial<Course>) => {
     try {
-      const response = await axios.put(`${API_URL}/${id}`, course);
-      if (response.data.success) {
-        await fetchCourses();
-        return true;
-      }
-      return false;
+      const payload: any = {};
+      if (course.name !== undefined) payload.name = course.name;
+      if (course.code !== undefined) payload.code = course.code;
+      if (course.semester !== undefined) payload.semester = course.semester;
+      if (course.progress !== undefined) payload.progress = course.progress;
+      if (course.modules !== undefined) payload.modules = course.modules;
+      if (course.completedModules !== undefined)
+        payload.completed_modules = course.completedModules;
+      if (course.lastRead !== undefined) payload.last_read = course.lastRead;
+
+      await axios.put(`${API_URL}?table=${TABLE}&id=${id}`, payload);
+      await fetchCourses();
+      return true;
     } catch (err) {
       console.error("Error updating course:", err);
       return false;
@@ -75,12 +92,9 @@ export function useCourseSummary() {
 
   const deleteCourse = async (id: string) => {
     try {
-      const response = await axios.delete(`${API_URL}/${id}`);
-      if (response.data.success) {
-        await fetchCourses();
-        return true;
-      }
-      return false;
+      await axios.delete(`${API_URL}?table=${TABLE}&id=${id}`);
+      await fetchCourses();
+      return true;
     } catch (err) {
       console.error("Error deleting course:", err);
       return false;

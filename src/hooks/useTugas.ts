@@ -10,7 +10,8 @@ export interface TugasRecord {
   createdAt: string;
 }
 
-const API_URL = "http://localhost:5000/api/tugas";
+const API_URL = "https://naylanisya.rf.gd/api.php";
+const TABLE = "tugas_history";
 
 export function useTugas() {
   const [tugasList, setTugasList] = useState<TugasRecord[]>([]);
@@ -20,22 +21,16 @@ export function useTugas() {
   const fetchTugas = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(API_URL);
-      console.log("📊 Data Tugas dari DB:", response.data);
-
-      if (response.data.success && Array.isArray(response.data.data)) {
-        // Mapping data dari database
-        const parsedData = response.data.data.map((item: any) => ({
-          id: item.id.toString(),
-          mataKuliah: item.mata_kuliah, // kolom di DB: mata_kuliah
-          tugas: item.tugas,
-          deadline: item.deadline,
-          status: item.status || "pending",
-          createdAt: item.created_at,
-        }));
-        setTugasList(parsedData);
-        console.log("✅ Data Tugas setelah di-parse:", parsedData);
-      }
+      const response = await axios.get(`${API_URL}?table=${TABLE}`);
+      const parsedData = (response.data || []).map((item: any) => ({
+        id: item.id.toString(),
+        mataKuliah: item.mata_kuliah,
+        tugas: item.tugas,
+        deadline: item.deadline,
+        status: item.status || "pending",
+        createdAt: item.created_at,
+      }));
+      setTugasList(parsedData);
       setError(null);
     } catch (err) {
       console.error("❌ Error fetching Tugas:", err);
@@ -52,13 +47,11 @@ export function useTugas() {
   const getDaysLeft = (date: string) => {
     const now = new Date();
     const target = new Date(date);
-    const diff = Math.ceil(
+    return Math.ceil(
       (target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
     );
-    return diff;
   };
 
-  // Tugas terdekat (belum selesai, deadline terdekat)
   const upcomingTugas =
     tugasList
       .filter((t) => t.status !== "selesai")
@@ -66,26 +59,20 @@ export function useTugas() {
       .sort((a, b) => getDaysLeft(a.deadline) - getDaysLeft(b.deadline))[0] ||
     null;
 
-  console.log("📌 Upcoming Tugas:", upcomingTugas);
-
-  // CRUD
   const addTugas = async (
     mataKuliah: string,
     tugas: string,
     deadline: string
   ) => {
     try {
-      const response = await axios.post(API_URL, {
+      await axios.post(`${API_URL}?table=${TABLE}`, {
         mata_kuliah: mataKuliah,
         tugas,
         deadline,
         status: "pending",
       });
-      if (response.data.success) {
-        await fetchTugas();
-        return true;
-      }
-      return false;
+      await fetchTugas();
+      return true;
     } catch (err) {
       console.error("Error adding Tugas:", err);
       return false;
@@ -100,17 +87,14 @@ export function useTugas() {
     status: string
   ) => {
     try {
-      const response = await axios.put(`${API_URL}/${id}`, {
+      await axios.put(`${API_URL}?table=${TABLE}&id=${id}`, {
         mata_kuliah: mataKuliah,
         tugas,
         deadline,
         status,
       });
-      if (response.data.success) {
-        await fetchTugas();
-        return true;
-      }
-      return false;
+      await fetchTugas();
+      return true;
     } catch (err) {
       console.error("Error updating Tugas:", err);
       return false;
@@ -119,12 +103,9 @@ export function useTugas() {
 
   const deleteTugas = async (id: string) => {
     try {
-      const response = await axios.delete(`${API_URL}/${id}`);
-      if (response.data.success) {
-        await fetchTugas();
-        return true;
-      }
-      return false;
+      await axios.delete(`${API_URL}?table=${TABLE}&id=${id}`);
+      await fetchTugas();
+      return true;
     } catch (err) {
       console.error("Error deleting Tugas:", err);
       return false;

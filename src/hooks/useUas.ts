@@ -10,7 +10,8 @@ export interface UasRecord {
   createdAt: string;
 }
 
-const API_URL = "http://localhost:5000/api/uas";
+const API_URL = "https://naylanisya.rf.gd/api.php";
+const TABLE = "uas_history";
 
 export function useUas() {
   const [uasList, setUasList] = useState<UasRecord[]>([]);
@@ -20,22 +21,16 @@ export function useUas() {
   const fetchUas = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(API_URL);
-      console.log("📊 Data UAS dari DB:", response.data);
-
-      if (response.data.success && Array.isArray(response.data.data)) {
-        // Mapping data dari database
-        const parsedData = response.data.data.map((item: any) => ({
-          id: item.id.toString(),
-          mataKuliah: item.mata_kuliah, // kolom di DB: mata_kuliah
-          tanggal: item.tanggal,
-          jam: item.jam || "-",
-          ruangan: item.ruangan || "-",
-          createdAt: item.created_at,
-        }));
-        setUasList(parsedData);
-        console.log("✅ Data UAS setelah di-parse:", parsedData);
-      }
+      const response = await axios.get(`${API_URL}?table=${TABLE}`);
+      const parsedData = (response.data || []).map((item: any) => ({
+        id: item.id.toString(),
+        mataKuliah: item.mata_kuliah,
+        tanggal: item.tanggal,
+        jam: item.jam || "-",
+        ruangan: item.ruangan || "-",
+        createdAt: item.created_at,
+      }));
+      setUasList(parsedData);
       setError(null);
     } catch (err) {
       console.error("❌ Error fetching UAS:", err);
@@ -52,13 +47,11 @@ export function useUas() {
   const getDaysLeft = (date: string) => {
     const now = new Date();
     const target = new Date(date);
-    const diff = Math.ceil(
+    return Math.ceil(
       (target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
     );
-    return diff;
   };
 
-  // UAS terdekat
   const upcomingUas =
     uasList.length > 0
       ? uasList
@@ -67,9 +60,6 @@ export function useUas() {
         uasList[0]
       : null;
 
-  console.log("📌 Upcoming UAS:", upcomingUas);
-
-  // CRUD
   const addUas = async (
     mataKuliah: string,
     tanggal: string,
@@ -77,17 +67,14 @@ export function useUas() {
     ruangan: string
   ) => {
     try {
-      const response = await axios.post(API_URL, {
+      await axios.post(`${API_URL}?table=${TABLE}`, {
         mata_kuliah: mataKuliah,
         tanggal,
         jam,
         ruangan,
       });
-      if (response.data.success) {
-        await fetchUas();
-        return true;
-      }
-      return false;
+      await fetchUas();
+      return true;
     } catch (err) {
       console.error("Error adding UAS:", err);
       return false;
@@ -102,17 +89,14 @@ export function useUas() {
     ruangan: string
   ) => {
     try {
-      const response = await axios.put(`${API_URL}/${id}`, {
+      await axios.put(`${API_URL}?table=${TABLE}&id=${id}`, {
         mata_kuliah: mataKuliah,
         tanggal,
         jam,
         ruangan,
       });
-      if (response.data.success) {
-        await fetchUas();
-        return true;
-      }
-      return false;
+      await fetchUas();
+      return true;
     } catch (err) {
       console.error("Error updating UAS:", err);
       return false;
@@ -121,12 +105,9 @@ export function useUas() {
 
   const deleteUas = async (id: string) => {
     try {
-      const response = await axios.delete(`${API_URL}/${id}`);
-      if (response.data.success) {
-        await fetchUas();
-        return true;
-      }
-      return false;
+      await axios.delete(`${API_URL}?table=${TABLE}&id=${id}`);
+      await fetchUas();
+      return true;
     } catch (err) {
       console.error("Error deleting UAS:", err);
       return false;

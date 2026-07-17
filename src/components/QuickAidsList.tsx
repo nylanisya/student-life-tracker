@@ -48,7 +48,7 @@ const typeOptions = [
   },
 ];
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://naylanisya.rf.gd/api.php";
 
 const QuickAidsList: React.FC<QuickAidsListProps> = ({
   type: initialType,

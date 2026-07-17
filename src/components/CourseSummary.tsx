@@ -23,7 +23,7 @@ interface Course {
   lastRead: string;
 }
 
-const API_URL = "http://localhost:5000/api/courses";
+const API_URL = "https://naylanisya.rf.gd/api.php";
 
 const CourseSummary: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);

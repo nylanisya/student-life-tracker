@@ -4,7 +4,7 @@ import { useUas } from "../hooks/useUas";
 import Modal from "./Modal";
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api/courses";
+const API_URL = "https://naylanisya.rf.gd/api.php";
 
 const UasManager: React.FC = () => {
   const {

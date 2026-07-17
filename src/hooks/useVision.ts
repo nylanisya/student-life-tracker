@@ -9,7 +9,8 @@ export interface VisionItem {
   createdAt?: string;
 }
 
-const API_URL = "http://localhost:5000/api/visions";
+const API_URL = "https://naylanisya.rf.gd/api.php";
+const TABLE = "visions";
 
 export function useVision() {
   const [visionItems, setVisionItems] = useState<VisionItem[]>([]);
@@ -19,20 +20,15 @@ export function useVision() {
   const fetchVisions = async () => {
     try {
       setLoading(true);
-      console.log("📡 Fetching visions...");
-      const response = await axios.get(API_URL);
-      console.log("📊 Response visions:", response.data);
-      if (response.data.success && Array.isArray(response.data.data)) {
-        const parsedData = response.data.data.map((item: any) => ({
-          id: item.id.toString(),
-          title: item.title,
-          category: item.category,
-          timeline: item.timeline || "short-term",
-          createdAt: item.created_at,
-        }));
-        setVisionItems(parsedData);
-        console.log("✅ Visions setelah di-parse:", parsedData);
-      }
+      const response = await axios.get(`${API_URL}?table=${TABLE}`);
+      const parsedData = (response.data || []).map((item: any) => ({
+        id: item.id.toString(),
+        title: item.title,
+        category: item.category,
+        timeline: item.timeline || "short-term",
+        createdAt: item.created_at,
+      }));
+      setVisionItems(parsedData);
       setError(null);
     } catch (err) {
       console.error("❌ Error fetching visions:", err);
@@ -48,14 +44,9 @@ export function useVision() {
 
   const addVision = async (vision: Omit<VisionItem, "id">) => {
     try {
-      console.log("📡 Adding vision:", vision);
-      const response = await axios.post(API_URL, vision);
-      console.log("📊 Response add vision:", response.data);
-      if (response.data.success) {
-        await fetchVisions();
-        return true;
-      }
-      return false;
+      await axios.post(`${API_URL}?table=${TABLE}`, vision);
+      await fetchVisions();
+      return true;
     } catch (err) {
       console.error("❌ Error adding vision:", err);
       return false;
@@ -64,14 +55,9 @@ export function useVision() {
 
   const updateVision = async (id: string, vision: Partial<VisionItem>) => {
     try {
-      console.log("📡 Updating vision:", id, vision);
-      const response = await axios.put(`${API_URL}/${id}`, vision);
-      console.log("📊 Response update vision:", response.data);
-      if (response.data.success) {
-        await fetchVisions();
-        return true;
-      }
-      return false;
+      await axios.put(`${API_URL}?table=${TABLE}&id=${id}`, vision);
+      await fetchVisions();
+      return true;
     } catch (err) {
       console.error("❌ Error updating vision:", err);
       return false;
@@ -80,14 +66,9 @@ export function useVision() {
 
   const deleteVision = async (id: string) => {
     try {
-      console.log("📡 Deleting vision:", id);
-      const response = await axios.delete(`${API_URL}/${id}`);
-      console.log("📊 Response delete vision:", response.data);
-      if (response.data.success) {
-        await fetchVisions();
-        return true;
-      }
-      return false;
+      await axios.delete(`${API_URL}?table=${TABLE}&id=${id}`);
+      await fetchVisions();
+      return true;
     } catch (err) {
       console.error("❌ Error deleting vision:", err);
       return false;
